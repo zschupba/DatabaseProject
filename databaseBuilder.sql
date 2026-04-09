@@ -61,7 +61,7 @@ create table classroom (
 
 create table timeslot (
     slot_id         NUMERIC(6,0)    PRIMARY KEY,
-    day_of_week     VARCHAR(8)      NOT NULL,
+    day_of_week     VARCHAR(9)      NOT NULL,
     start_time      TIME            NOT NULL,
     end_time        TIME            NOT NULL
 );

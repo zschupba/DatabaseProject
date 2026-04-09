@@ -1,3 +1,16 @@
+delete from prereq;
+delete from enrolls;
+delete from useraccount;
+delete from advisor;
+delete from student;
+delete from timeslot;
+delete from teaches;
+delete from section;
+delete from instructor;
+delete from course;
+delete from department;
+delete from classroom;
+delete from building;
 -- Building
 INSERT INTO building VALUES (1, 'Science Hall',    '100 Loop rd');
 INSERT INTO building VALUES (2, 'Liberal Arts',    '200 Summit st');
@@ -14,32 +27,32 @@ INSERT INTO instructor VALUES (1002, 'Michael',  'Walters', 92000.00, '2015-01-1
 INSERT INTO instructor VALUES (1003, 'Giovanni', 'Lastname',    78000.00, '2020-09-01', 30);
  
 -- Students
-INSERT INTO student VALUES (100000001, 'James',   'Smith',  'jsmith@kent.edu',   '2022-08-20', TRUE, 10);
+INSERT INTO student VALUES (100000001, 'James',   'Smith',  'jsmith@kent.edu',  '2022-08-20', TRUE, 10);
 INSERT INTO student VALUES (100000002, 'Caden',  'Butt',  'cbutt@kent.edu',   '2022-08-20', TRUE, 10);
-INSERT INTO student VALUES (100000003, 'Marcus',  'Hill',    'mhill@kent.edu',     '2021-08-18', TRUE, 20);
-INSERT INTO student VALUES (100000004, 'Olivia',  'Brooks',  'obrooks@kent.edu',   '2023-01-10', TRUE, 20);
-INSERT INTO student VALUES (100000005, 'Ethan',   'Ross',    'eross@kent.edu',     '2021-08-18', TRUE, 30);
+INSERT INTO student VALUES (100000003, 'Marcus',  'Hill',    'mhill@kent.edu',     '2022-08-20', TRUE, 20);
+INSERT INTO student VALUES (100000004, 'Olivia',  'Brooks',  'obrooks@kent.edu',   '2022-08-20', TRUE, 20);
+INSERT INTO student VALUES (100000005, 'Ethan',   'Ross',    'eross@kent.edu',     '2022-08-20', TRUE, 30);
 INSERT INTO student VALUES (100000006, 'Ava',     'Mitchell','amitchell@kent.edu', '2022-08-20', TRUE, 30);
-INSERT INTO student VALUES (100000007, 'Liam',    'Foster',  'lfoster@kent.edu',   '2023-01-10', TRUE, 10);
+INSERT INTO student VALUES (100000007, 'Liam',    'Foster',  'lfoster@kent.edu',   '2022-08-20', TRUE, 10);
 INSERT INTO student VALUES (100000008, 'Emma',    'Gray',    'egray@kent.edu',     '2022-08-20', TRUE, 20);
-INSERT INTO student VALUES (100000009, 'Noah',    'Bennett', 'nbennett@kent.edu',  '2021-08-18', TRUE, 30);
-INSERT INTO student VALUES (100000010, 'Isabella','Price',   'iprice@kent.edu',    '2023-08-21', TRUE, 10);
+INSERT INTO student VALUES (100000009, 'Noah',    'Bennett', 'nbennett@kent.edu',  '2022-08-20', TRUE, 30);
+INSERT INTO student VALUES (100000010, 'Isabella','Price',   'iprice@kent.edu',    '2022-08-20', TRUE, 10);
  
 -- User Accounts
-INSERT INTO useraccount VALUES (9000000001, 'meldin',     'pass1234', 'instructor', NULL, 1001, , NULL);
-INSERT INTO useraccount VALUES (9000000002, 'mwalters',    'pass1234', 'instructor', NULL, 1002, NULL, NULL);
-INSERT INTO useraccount VALUES (9000000003, 'glastnam',       'pass1234', 'instructor', NULL, 1003, NULL, NULL);
-INSERT INTO useraccount VALUES (9000000004, 'jsmith',     'pass1234', 'student',    100000001, NULL, NULL, NULL);
-INSERT INTO useraccount VALUES (9000000005, 'cbutt',     'pass1234', 'student',    100000002, NULL, NULL, NULL);
-INSERT INTO useraccount VALUES (9000000006, 'mhill',       'pass1234', 'student',    100000003, NULL, NULL, NULL);
-INSERT INTO useraccount VALUES (9000000007, 'obrooks',     'pass1234', 'student',    100000004, NULL, NULL, NULL);
-INSERT INTO useraccount VALUES (9000000008, 'eross',       'pass1234', 'student',    100000005, NULL, NULL, NULL);
-INSERT INTO useraccount VALUES (9000000009, 'amitchell',   'pass1234', 'student',    100000006, NULL, NULL, NULL);
-INSERT INTO useraccount VALUES (9000000010, 'lfoster',     'pass1234', 'student',    100000007, NULL, NULL, NULL);
-INSERT INTO useraccount VALUES (9000000011, 'egray',       'pass1234', 'student',    100000008, NULL, NULL, NULL);
-INSERT INTO useraccount VALUES (9000000012, 'nbennett',    'pass1234', 'student',    100000009, NULL, NULL, NULL);
-INSERT INTO useraccount VALUES (9000000013, 'iprice',      'pass1234', 'student',    100000010, NULL, NULL, NULL);
-INSERT INTO useraccount VALUES (9000000014, 'admin',       'adminpass','admin',      NULL,      NULL, NULL, NULL);
+INSERT INTO useraccount VALUES (9000000001, 'meldin',     'pass1234', 'instructor', NULL, 1001, '2018-08-01', NOW());
+INSERT INTO useraccount VALUES (9000000002, 'mwalters',    'pass1234', 'instructor', NULL, 1002, '2015-01-15', NOW());
+INSERT INTO useraccount VALUES (9000000003, 'glastnam',       'pass1234', 'instructor', NULL, 1003, '2020-09-01', NOW());
+INSERT INTO useraccount VALUES (9000000004, 'jsmith',     'pass1234', 'student',    100000001, NULL, '2022-08-20', NOW());
+INSERT INTO useraccount VALUES (9000000005, 'cbutt',     'pass1234', 'student',    100000002, NULL, '2022-08-20', NOW());
+INSERT INTO useraccount VALUES (9000000006, 'mhill',       'pass1234', 'student',    100000003, NULL,'2022-08-20', NOW());
+INSERT INTO useraccount VALUES (9000000007, 'obrooks',     'pass1234', 'student',    100000004, NULL, '2022-08-20', NOW());
+INSERT INTO useraccount VALUES (9000000008, 'eross',       'pass1234', 'student',    100000005, NULL, '2022-08-20', NOW());
+INSERT INTO useraccount VALUES (9000000009, 'amitchell',   'pass1234', 'student',    100000006, NULL, '2022-08-20', NOW());
+INSERT INTO useraccount VALUES (9000000010, 'lfoster',     'pass1234', 'student',    100000007, NULL, '2022-08-20', NOW());
+INSERT INTO useraccount VALUES (9000000011, 'egray',       'pass1234', 'student',    100000008, NULL, '2022-08-20', NOW());
+INSERT INTO useraccount VALUES (9000000012, 'nbennett',    'pass1234', 'student',    100000009, NULL, '2022-08-20', NOW());
+INSERT INTO useraccount VALUES (9000000013, 'iprice',      'pass1234', 'student',    100000010, NULL, '2022-08-20', NOW());
+INSERT INTO useraccount VALUES (9000000014, 'admin',       'adminpass','admin',      NULL,      NULL, '2022-08-20', NOW());
  
 -- Classrooms
 INSERT INTO classroom VALUES (201, 1, 101, 30);
