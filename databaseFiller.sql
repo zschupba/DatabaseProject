@@ -41,7 +41,7 @@ INSERT INTO student VALUES (100000010, 'Isabella','Price',   'iprice@kent.edu', 
 -- User Accounts
 INSERT INTO useraccount VALUES (9000000001, 'meldin',     'pass1234', 'instructor', NULL, 1001, '2018-08-01', NOW());
 INSERT INTO useraccount VALUES (9000000002, 'mwalters',    'pass1234', 'instructor', NULL, 1002, '2015-01-15', NOW());
-INSERT INTO useraccount VALUES (9000000003, 'glastnam',       'pass1234', 'instructor', NULL, 1003, '2020-09-01', NOW());
+INSERT INTO useraccount VALUES (9000000003, 'glastnam',    'pass1234', 'instructor', NULL, 1003, '2020-09-01', NOW());
 INSERT INTO useraccount VALUES (9000000004, 'jsmith',     'pass1234', 'student',    100000001, NULL, '2022-08-20', NOW());
 INSERT INTO useraccount VALUES (9000000005, 'cbutt',     'pass1234', 'student',    100000002, NULL, '2022-08-20', NOW());
 INSERT INTO useraccount VALUES (9000000006, 'mhill',       'pass1234', 'student',    100000003, NULL,'2022-08-20', NOW());
