@@ -2,14 +2,14 @@ delete from prereq;
 delete from enrolls;
 delete from useraccount;
 delete from advisor;
-delete from student;
-delete from timeslot;
 delete from teaches;
 delete from section;
+delete from student;
 delete from instructor;
 delete from course;
-delete from department;
+delete from timeslot;
 delete from classroom;
+delete from department;
 delete from building;
 -- Building
 INSERT INTO building VALUES (1, 'Science Hall',    '100 Loop rd');
