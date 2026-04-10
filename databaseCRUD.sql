@@ -365,6 +365,12 @@ BEGIN
     FROM   useraccount
     WHERE  user_id = p_user_id;
 END //
+
+CREATE PROCEDURE read_users ()
+BEGIN
+    SELECT user_id, username, role, student_id, instructor_id, created_at, last_login
+    FROM   useraccount;
+END //
  
 CREATE PROCEDURE update_user_password (
     IN p_user_id  NUMERIC(10,0),
