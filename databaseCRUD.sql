@@ -10,7 +10,10 @@ CREATE PROCEDURE create_student (
     IN p_email              VARCHAR(32),
     IN p_enrollment_date    DATE,
     IN p_enrollment_status  BOOLEAN,
-    IN p_dept_id            NUMERIC(6,0)
+    IN p_dept_id            NUMERIC(6,0),
+    IN p_user_id            NUMERIC(10,0),
+    IN p_username           VARCHAR(12),
+    IN p_password           VARCHAR(16)
 )
 BEGIN
     INSERT INTO student (
@@ -21,6 +24,9 @@ BEGIN
         p_student_id, p_first_name, p_last_name, p_email,
         p_enrollment_date, p_enrollment_status, p_dept_id
     );
+
+    INSERT INTO useraccount (user_id, username, password, role, student_id, instructor_id)
+    VALUES (p_user_id, p_username, p_password, 'student', p_student_id, NULL);
 END //
 
 CREATE PROCEDURE read_students ()
@@ -78,7 +84,10 @@ CREATE PROCEDURE create_instructor (
     IN p_last_name      VARCHAR(16),
     IN p_salary         NUMERIC(8,2),
     IN p_hire_date      DATE,
-    IN p_dept_id        NUMERIC(6,0)
+    IN p_dept_id        NUMERIC(6,0),
+    IN p_user_id        NUMERIC(10,0),
+    IN p_username       VARCHAR(12),
+    IN p_password       VARCHAR(16)
 )
 BEGIN
     INSERT INTO instructor (
@@ -87,6 +96,9 @@ BEGIN
     VALUES (
         p_instructor_id, p_first_name, p_last_name, p_salary, p_hire_date, p_dept_id
     );
+
+    INSERT INTO useraccount (user_id, username, password, role, student_id, instructor_id)
+    VALUES (p_user_id, p_username, p_password, 'instructor', NULL, p_instructor_id);
 END //
 
 CREATE PROCEDURE read_instructors ()
@@ -333,5 +345,43 @@ BEGIN
         END IF;
     END IF;
 END //
+
+
+CREATE PROCEDURE create_user_admin (
+    IN p_user_id  NUMERIC(10,0),
+    IN p_username VARCHAR(12),
+    IN p_password VARCHAR(16)
+)
+BEGIN
+    INSERT INTO useraccount (user_id, username, password, role, student_id, instructor_id)
+    VALUES (p_user_id, p_username, p_password, 'admin', NULL, NULL);
+END //
+ 
+CREATE PROCEDURE read_user (
+    IN p_user_id NUMERIC(10,0)
+)
+BEGIN
+    SELECT user_id, username, role, student_id, instructor_id, created_at, last_login
+    FROM   useraccount
+    WHERE  user_id = p_user_id;
+END //
+ 
+CREATE PROCEDURE update_user_password (
+    IN p_user_id  NUMERIC(10,0),
+    IN p_password VARCHAR(16)
+)
+BEGIN
+    UPDATE useraccount
+    SET password = p_password
+    WHERE user_id = p_user_id;
+END //
+ 
+CREATE PROCEDURE delete_user (
+    IN p_user_id NUMERIC(10,0)
+)
+BEGIN
+    DELETE FROM useraccount WHERE user_id = p_user_id;
+END //
+
 
 DELIMITER ;
