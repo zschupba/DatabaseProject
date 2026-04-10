@@ -1,1 +1,0 @@
--- Crud outlines to create, read update and delete data in the database
