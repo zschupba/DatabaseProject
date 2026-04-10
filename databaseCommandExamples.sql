@@ -35,18 +35,16 @@ CALL delete_section(1005);
 
 CALL enroll_student(11, CURDATE(), 100000003, 1001, @result);
 SELECT @result;
-
+-- should error
 CALL enroll_student(12, CURDATE(), 100000003, 1001, @result);
 SELECT @result;
-
+-- should error
 CALL enroll_student(12, CURDATE(), 100000003, 9999, @result);
 SELECT @result;
 
 CALL assign_instructor_to_class(6, 1002, 1001, @result);
 SELECT @result;
 
-CALL assign_instructor_to_class(7, 1002, 1001, @result);
-SELECT @result;
 
 CALL drop_student_from_section(11, @result);
 SELECT @result;
