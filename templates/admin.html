@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+</head>
+<body>
+
+<h1>Admin Dashboard</h1>
+
+<p>Welcome, {{ session.username }}</p>
+
+<hr>
+
+<h3>Manage Data</h3>
+
+<ul>
+    <li><a href="/view-students">View Students</a></li>
+    <li><a href="/add-student">Add Student</a></li>
+    <li><a href="/view-courses">View Courses</a></li>
+    <li><a href="/add-course">Add Course</a></li>
+    <li><a href="/view-sections">View Sections</a></li>
+    <li><a href="/add-section">Add Section</a></li>
+    
+</ul>
+
+<br>
+<a href="/logout">Logout</a>
+
+</body>
+</html>

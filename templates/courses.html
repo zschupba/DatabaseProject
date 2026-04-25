@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Courses</title>
+</head>
+<body>
+
+<h2>Courses List</h2>
+
+<table border="1">
+<tr>
+    <th>Course Code</th>
+    <th>Title</th>
+    <th>Credits</th>
+    <th>Action</th>
+</tr>
+
+{% for c in courses %}
+<tr>
+    <td>{{ c.course_code }}</td>
+    <td>{{ c.title }}</td>
+    <td>{{ c.credits }}</td>
+    <td>
+        <a href="/edit-course/{{ c.course_code }}">Edit</a> |
+        <a href="/delete-course/{{ c.course_code }}">Delete</a>
+    </td>
+</tr>
+{% endfor %}
+
+</table>
+
+<br>
+<a href="/admin">Back to Admin</a>
+
+</body>
+</html>

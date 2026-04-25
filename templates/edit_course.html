@@ -1,0 +1,14 @@
+<h2>Edit Course</h2>
+
+<form method="POST">
+    <label>Title:</label>
+    <input type="text" name="title" value="{{ course.title }}"><br><br>
+
+    <label>Credits:</label>
+    <input type="text" name="credits" value="{{ course.credits }}"><br><br>
+
+    <button type="submit">Update</button>
+</form>
+
+<br>
+<a href="/view-courses">Back</a>
