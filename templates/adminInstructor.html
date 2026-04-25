@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Instructors{% endblock %}
+
+{% block nav_links %}
+<a href="/admin">Dashboard</a>
+<a href="/admin/students">Students</a>
+<a href="/admin/instructors" class="active">Instructors</a>
+<a href="/admin/sections">Sections</a>
+{% endblock %}
+
+{% block content %}
+<h1>Manage Instructors</h1>
+
+<div id="form-alert" style="display:none;"></div>
+
+<div class="card">
+    <h3>Add New Instructor</h3>
+
+    <label>Instructor ID:</label>
+    <input type="number" id="instructor-id" placeholder="1004">
+
+    <label>First Name:</label>
+    <input type="text" id="first-name" placeholder="John">
+
+    <label>Last Name:</label>
+    <input type="text" id="last-name" placeholder="Doe">
+
+    <label>Salary:</label>
+    <input type="number" id="salary" placeholder="75000.00">
+
+    <label>Hire Date:</label>
+    <input type="date" id="hire-date">
+
+    <label>Department:</label>
+    <select id="dept">
+        <option value="">-- Select Department --</option>
+        {% for d in departments %}
+        <option value="{{ d.dept_id }}">{{ d.dept_name }}</option>
+        {% endfor %}
+    </select>
+
+    <hr>
+    <p><strong>Account Info</strong></p>
+
+    <label>User ID:</label>
+    <input type="number" id="user-id" placeholder="9000000016">
+
+    <label>Username:</label>
+    <input type="text" id="username" maxlength="12" placeholder="jdoe">
+
+    <label>Password:</label>
+    <input type="text" id="password" maxlength="16" placeholder="pass1234">
+
+    <button class="btn-green" onclick="addInstructor()">Add Instructor</button>
+    <button class="btn-grey" onclick="resetForm()">Reset</button>
+</div>
+
+<div class="card">
+    <h3>All Instructors</h3>
+    <button onclick="loadInstructors()">Refresh List</button>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Salary</th>
+                <th>Hire Date</th>
+                <th>Dept ID</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="instructors-body">
+            <tr><td colspan="7">Click Refresh to load instructors.</td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function showAlert(type, msg) {
+        var el = document.getElementById('form-alert');
+        el.className = 'alert alert-' + type;
+        el.textContent = msg;
+        el.style.display = 'block';
+        if (type === 'success') setTimeout(function() { el.style.display = 'none'; }, 4000);
+    }
+
+    async function addInstructor() {
+        var payload = {
+            instructor_id: document.getElementById('instructor-id').value,
+            first_name: document.getElementById('first-name').value.trim(),
+            last_name: document.getElementById('last-name').value.trim(),
+            salary: document.getElementById('salary').value,
+            hire_date: document.getElementById('hire-date').value,
+            dept_id: document.getElementById('dept').value,
+            user_id: document.getElementById('user-id').value,
+            username: document.getElementById('username').value.trim(),
+            password: document.getElementById('password').value.trim()
+        };
+
+        if (!payload.instructor_id || !payload.first_name || !payload.last_name) {
+            showAlert('error', 'Please fill in all required fields.');
+            return;
+        }
+
+        try {
+            var res = await fetch('/api/admin/instructors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            var data = await res.json();
+            if (data.error) {
+                showAlert('error', data.error);
+            } else {
+                showAlert('success', 'Instructor added successfully.');
+                resetForm();
+                loadInstructors();
+            }
+        } catch (err) {
+            showAlert('error', 'Network error.');
+        }
+    }
+
+    async function deleteInstructor(id) {
+        if (!confirm('Delete instructor ' + id + '? This cannot be undone.')) return;
+        try {
+            var res = await fetch('/api/admin/instructors/' + id, { method: 'DELETE' });
+            var data = await res.json();
+            if (data.error) {
+                showAlert('error', data.error);
+            } else {
+                showAlert('success', 'Instructor deleted.');
+                loadInstructors();
+            }
+        } catch (err) {
+            showAlert('error', 'Network error.');
+        }
+    }
+
+    async function loadInstructors() {
+        var tbody = document.getElementById('instructors-body');
+        tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+        try {
+            var res = await fetch('/api/admin/instructors');
+            var data = await res.json();
+            if (data.error) {
+                tbody.innerHTML = '<tr><td colspan="7">Error: ' + data.error + '</td></tr>';
+                return;
+            }
+            if (!data.instructors.length) {
+                tbody.innerHTML = '<tr><td colspan="7">No instructors found.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = '';
+            data.instructors.forEach(function(i) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + i.instructor_id + '</td>' +
+                    '<td>' + i.first_name + '</td>' +
+                    '<td>' + i.last_name + '</td>' +
+                    '<td>$' + parseFloat(i.salary || 0).toLocaleString() + '</td>' +
+                    '<td>' + (i.hire_date ? i.hire_date.split('T')[0] : '-') + '</td>' +
+                    '<td>' + (i.dept_id || '-') + '</td>' +
+                    '<td><button class="btn-red" onclick="deleteInstructor(' + i.instructor_id + ')">Delete</button></td>';
+                tbody.appendChild(tr);
+            });
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="7">Network error.</td></tr>';
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('instructor-id').value = '';
+        document.getElementById('first-name').value = '';
+        document.getElementById('last-name').value = '';
+        document.getElementById('salary').value = '';
+        document.getElementById('hire-date').value = '';
+        document.getElementById('dept').value = '';
+        document.getElementById('user-id').value = '';
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+    }
+</script>
+{% endblock %}

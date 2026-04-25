@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Sections{% endblock %}
+
+{% block nav_links %}
+<a href="/admin">Dashboard</a>
+<a href="/admin/students">Students</a>
+<a href="/admin/instructors">Instructors</a>
+<a href="/admin/sections" class="active">Sections</a>
+{% endblock %}
+
+{% block content %}
+<h1>Manage Sections</h1>
+
+<div id="form-alert" style="display:none;"></div>
+
+<div class="card">
+    <h3>Add New Section</h3>
+
+    <label>Section ID:</label>
+    <input type="number" id="section-id" placeholder="1005">
+
+    <label>Course:</label>
+    <select id="course">
+        <option value="">-- Select Course --</option>
+        {% for c in courses %}
+        <option value="{{ c.course_code }}">{{ c.title }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Semester:</label>
+    <select id="semester">
+        <option value="Spring">Spring</option>
+        <option value="Fall  ">Fall</option>
+        <option value="Summer">Summer</option>
+    </select>
+
+    <label>Year:</label>
+    <input type="number" id="year" placeholder="2025" value="2025">
+
+    <label>Capacity:</label>
+    <input type="number" id="capacity" placeholder="30">
+
+    <label>Classroom:</label>
+    <select id="classroom">
+        <option value="">-- Select Classroom --</option>
+        {% for cl in classrooms %}
+        <option value="{{ cl.classroom_id }}">{{ cl.building }} - Room {{ cl.room_number }}</option>
+        {% endfor %}
+    </select>
+
+    <label>Timeslot:</label>
+    <select id="slot">
+        <option value="">-- Select Timeslot --</option>
+        {% for t in timeslots %}
+        <option value="{{ t.slot_id }}">{{ t.day_of_week }} {{ t.start_time }} - {{ t.end_time }}</option>
+        {% endfor %}
+    </select>
+
+    <button class="btn-green" onclick="addSection()">Add Section</button>
+    <button class="btn-grey" onclick="resetForm()">Reset</button>
+</div>
+
+<div class="card">
+    <h3>Assign Instructor to Section</h3>
+
+    <label>Teaches Record ID:</label>
+    <input type="number" id="teaches-id" placeholder="5">
+
+    <label>Instructor ID:</label>
+    <input type="number" id="assign-instructor-id" placeholder="1001">
+
+    <label>Section ID:</label>
+    <input type="number" id="assign-section-id" placeholder="1001">
+
+    <button onclick="assignInstructor()">Assign Instructor</button>
+</div>
+
+<div class="card">
+    <h3>All Sections</h3>
+    <button onclick="loadSections()">Refresh List</button>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Course Code</th>
+                <th>Semester</th>
+                <th>Year</th>
+                <th>Capacity</th>
+                <th>Classroom</th>
+                <th>Timeslot</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="sections-body">
+            <tr><td colspan="8">Click Refresh to load sections.</td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function showAlert(type, msg) {
+        var el = document.getElementById('form-alert');
+        el.className = 'alert alert-' + type;
+        el.textContent = msg;
+        el.style.display = 'block';
+        if (type === 'success') setTimeout(function() { el.style.display = 'none'; }, 4000);
+    }
+
+    async function addSection() {
+        var payload = {
+            section_id: document.getElementById('section-id').value,
+            course_code: document.getElementById('course').value,
+            semester: document.getElementById('semester').value,
+            year: document.getElementById('year').value,
+            capacity: document.getElementById('capacity').value,
+            classroom_id: document.getElementById('classroom').value,
+            slot_id: document.getElementById('slot').value
+        };
+
+        if (!payload.section_id || !payload.course_code) {
+            showAlert('error', 'Section ID and Course are required.');
+            return;
+        }
+
+        try {
+            var res = await fetch('/api/admin/sections', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            var data = await res.json();
+            if (data.error) {
+                showAlert('error', data.error);
+            } else {
+                showAlert('success', 'Section added.');
+                resetForm();
+                loadSections();
+            }
+        } catch (err) {
+            showAlert('error', 'Network error.');
+        }
+    }
+
+    async function assignInstructor() {
+        var payload = {
+            teaches_id: document.getElementById('teaches-id').value,
+            instructor_id: document.getElementById('assign-instructor-id').value,
+            section_id: document.getElementById('assign-section-id').value
+        };
+
+        if (!payload.teaches_id || !payload.instructor_id || !payload.section_id) {
+            showAlert('error', 'All fields are required.');
+            return;
+        }
+
+        try {
+            var res = await fetch('/api/admin/assign_instructor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            var data = await res.json();
+            if (data.error) {
+                showAlert('error', data.error);
+            } else {
+                showAlert('success', 'Instructor assigned to section.');
+            }
+        } catch (err) {
+            showAlert('error', 'Network error.');
+        }
+    }
+
+    async function deleteSection(id) {
+        if (!confirm('Delete section ' + id + '? All enrollments will also be removed.')) return;
+        try {
+            var res = await fetch('/api/admin/sections/' + id, { method: 'DELETE' });
+            var data = await res.json();
+            if (data.error) {
+                showAlert('error', data.error);
+            } else {
+                showAlert('success', 'Section deleted.');
+                loadSections();
+            }
+        } catch (err) {
+            showAlert('error', 'Network error.');
+        }
+    }
+
+    async function loadSections() {
+        var tbody = document.getElementById('sections-body');
+        tbody.innerHTML = '<tr><td colspan="8">Loading...</td></tr>';
+        try {
+            var res = await fetch('/api/admin/sections');
+            var data = await res.json();
+            if (data.error) {
+                tbody.innerHTML = '<tr><td colspan="8">Error: ' + data.error + '</td></tr>';
+                return;
+            }
+            if (!data.sections.length) {
+                tbody.innerHTML = '<tr><td colspan="8">No sections found.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = '';
+            data.sections.forEach(function(s) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + s.section_id + '</td>' +
+                    '<td>' + s.course_code + '</td>' +
+                    '<td>' + s.semester.trim() + '</td>' +
+                    '<td>' + s.year + '</td>' +
+                    '<td>' + (s.capacity || '-') + '</td>' +
+                    '<td>' + (s.classroom_id || '-') + '</td>' +
+                    '<td>' + (s.slot_id || '-') + '</td>' +
+                    '<td><button class="btn-red" onclick="deleteSection(' + s.section_id + ')">Delete</button></td>';
+                tbody.appendChild(tr);
+            });
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="8">Network error.</td></tr>';
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('section-id').value = '';
+        document.getElementById('course').value = '';
+        document.getElementById('year').value = '2025';
+        document.getElementById('capacity').value = '';
+        document.getElementById('classroom').value = '';
+        document.getElementById('slot').value = '';
+    }
+</script>
+{% endblock %}

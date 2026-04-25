@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% set active_page = "dashboard" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block nav_links %}
+<a href="/admin" {% if active_page == 'dashboard' %}class="active"{% endif %}>Dashboard</a>
+<a href="/admin/students" {% if active_page == 'students' %}class="active"{% endif %}>Students</a>
+<a href="/admin/instructors" {% if active_page == 'instructors' %}class="active"{% endif %}>Instructors</a>
+<a href="/admin/sections" {% if active_page == 'sections' %}class="active"{% endif %}>Sections</a>
+{% endblock %}
+
+{% block content %}
+<h1>Admin Dashboard</h1>
+<p>Welcome, {{ username }}. Use the navigation above to manage the database.</p>
+
+<div class="card">
+    <h3>Students</h3>
+    <p>Add, edit, or remove student records.</p>
+    <a href="/admin/students"><button>Manage Students</button></a>
+</div>
+
+<div class="card">
+    <h3>Instructors</h3>
+    <p>Add, edit, or remove instructor records.</p>
+    <a href="/admin/instructors"><button>Manage Instructors</button></a>
+</div>
+
+<div class="card">
+    <h3>Sections</h3>
+    <p>Add, edit, or remove course sections. Assign instructors to sections.</p>
+    <a href="/admin/sections"><button>Manage Sections</button></a>
+</div>
+{% endblock %}
