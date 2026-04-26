@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Instructor Portal{% endblock %}
+
+{% block nav_links %}
+<a href="/instructor" class="active">My Sections</a>
+{% endblock %}
+
+{% block content %}
+<h1>Instructor Portal</h1>
+
+<div id="form-alert" style="display:none;"></div>
+
+<div class="card">
+    <h3>My Sections</h3>
+
+    <label>Semester:</label>
+    <select id="sem-filter" style="width:auto; display:inline; margin-right:1rem;">
+        <option value="Spring">Spring</option>
+        <option value="Fall  ">Fall</option>
+        <option value="Summer">Summer</option>
+    </select>
+
+    <label style="display:inline; margin-right:0.5rem;">Year:</label>
+    <input type="number" id="year-filter" value="2025" style="width:80px; display:inline; margin-right:0.5rem;">
+
+    <button onclick="loadSections()">Search</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Section ID</th>
+                <th>Course</th>
+                <th>Semester</th>
+                <th>Year</th>
+                <th>Enrolled / Capacity</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="sections-body">
+            <tr><td colspan="6">Select a semester and click Search.</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card" id="roster-card" style="display:none;">
+    <h3 id="roster-title">Section Roster</h3>
+    <button class="btn-grey" onclick="closeRoster()">Close Roster</button>
+    <table>
+        <thead>
+            <tr>
+                <th>Student ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Enrolled</th>
+                <th>Grade</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="roster-body"></tbody>
+    </table>
+</div>
+
+<div class="card" id="grade-card" style="display:none;">
+    <h3>Give Grade</h3>
+    <p id="grade-student-label"></p>
+    <input type="hidden" id="grade-enrollment-id">
+
+    <label>Grade:</label>
+    <select id="grade-value">
+        <option value="">-- Select Grade --</option>
+        <option>A</option><option>A-</option><option>B+</option><option>B</option>
+        <option>B-</option><option>C+</option><option>C</option><option>C-</option>
+        <option>D</option><option>F</option><option>W</option>
+    </select>
+
+    <button class="btn-green" onclick="submitGrade()">Submit Grade</button>
+    <button class="btn-grey" onclick="closeGrade()">Cancel</button>
+</div>
+
+<div class="card">
+    <h3>Update My Info</h3>
+    <p>You can update your name. Your ID cannot be changed.</p>
+
+    <label>First Name:</label>
+    <input type="text" id="p-first">
+
+    <label>Last Name:</label>
+    <input type="text" id="p-last">
+
+    <button class="btn-green" onclick="saveProfile()">Save Changes</button>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    var currentSectionId = null;
+
+    function showAlert(type, msg) {
+        var el = document.getElementById('form-alert');
+        el.className = 'alert alert-' + type;
+        el.textContent = msg;
+        el.style.display = 'block';
+        if (type === 'success') setTimeout(function() { el.style.display = 'none'; }, 4000);
+    }
+
+    async function loadSections() {
+        var sem = document.getElementById('sem-filter').value;
+        var year = document.getElementById('year-filter').value;
+        var tbody = document.getElementById('sections-body');
+        tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+        try {
+            var res = await fetch('/api/instructor/sections?semester=' + encodeURIComponent(sem) + '&year=' + year);
+            var data = await res.json();
+            if (data.error) { tbody.innerHTML = '<tr><td colspan="6">Error: ' + data.error + '</td></tr>'; return; }
+            if (!data.sections.length) { tbody.innerHTML = '<tr><td colspan="6">No sections found.</td></tr>'; return; }
+            tbody.innerHTML = '';
+            data.sections.forEach(function(s) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + s.section_id + '</td>' +
+                    '<td>' + s.course_title + '</td>' +
+                    '<td>' + s.semester.trim() + '</td>' +
+                    '<td>' + s.year + '</td>' +
+                    '<td>' + s.enrolled + ' / ' + (s.capacity || '?') + '</td>' +
+                    '<td><button onclick="loadRoster(' + s.section_id + ', \'' + s.course_title + '\')">View Roster</button></td>';
+                tbody.appendChild(tr);
+            });
+        } catch (err) { tbody.innerHTML = '<tr><td colspan="6">Network error.</td></tr>'; }
+    }
+
+    async function loadRoster(sectionId, courseTitle) {
+        currentSectionId = sectionId;
+        document.getElementById('roster-title').textContent = 'Roster - ' + courseTitle + ' (Section ' + sectionId + ')';
+        document.getElementById('roster-card').style.display = 'block';
+        document.getElementById('roster-body').innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+        try {
+            var res = await fetch('/api/instructor/roster/' + sectionId);
+            var data = await res.json();
+            if (data.error) { document.getElementById('roster-body').innerHTML = '<tr><td colspan="6">Error: ' + data.error + '</td></tr>'; return; }
+            if (!data.roster.length) { document.getElementById('roster-body').innerHTML = '<tr><td colspan="6">No students enrolled.</td></tr>'; return; }
+            document.getElementById('roster-body').innerHTML = '';
+            data.roster.forEach(function(r) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + r.student_id + '</td>' +
+                    '<td>' + r.first_name + ' ' + r.last_name + '</td>' +
+                    '<td>' + r.email + '</td>' +
+                    '<td>' + (r.date_enrolled ? r.date_enrolled.split('T')[0] : '-') + '</td>' +
+                    '<td>' + (r.grade || '-') + '</td>' +
+                    '<td>' +
+                        '<button onclick="openGrade(' + r.enrollment_id + ', \'' + r.first_name + ' ' + r.last_name + '\')">Grade</button> ' +
+                        '<button class="btn-red" onclick="dropStudent(' + r.enrollment_id + ', \'' + r.first_name + '\')">Drop</button>' +
+                    '</td>';
+                document.getElementById('roster-body').appendChild(tr);
+            });
+        } catch (err) { document.getElementById('roster-body').innerHTML = '<tr><td colspan="6">Network error.</td></tr>'; }
+    }
+
+    function openGrade(enrollmentId, studentName) {
+        document.getElementById('grade-enrollment-id').value = enrollmentId;
+        document.getElementById('grade-student-label').textContent = 'Student: ' + studentName;
+        document.getElementById('grade-value').value = '';
+        document.getElementById('grade-card').style.display = 'block';
+    }
+
+    async function submitGrade() {
+        var enrollmentId = document.getElementById('grade-enrollment-id').value;
+        var grade = document.getElementById('grade-value').value;
+        if (!grade) { showAlert('error', 'Please select a grade.'); return; }
+        try {
+            var res = await fetch('/api/instructor/grade', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enrollment_id: enrollmentId, grade: grade })
+            });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Grade submitted.');
+            closeGrade();
+            loadRoster(currentSectionId, '');
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    async function dropStudent(enrollmentId, studentName) {
+        if (!confirm('Remove ' + studentName + ' from this section?')) return;
+        try {
+            var res = await fetch('/api/instructor/drop_student', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enrollment_id: enrollmentId })
+            });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Student removed.');
+            loadRoster(currentSectionId, '');
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    async function saveProfile() {
+        var payload = {
+            first_name: document.getElementById('p-first').value.trim(),
+            last_name: document.getElementById('p-last').value.trim()
+        };
+        try {
+            var res = await fetch('/api/instructor/update_self', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Profile updated.');
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    function closeRoster() { document.getElementById('roster-card').style.display = 'none'; }
+    function closeGrade() { document.getElementById('grade-card').style.display = 'none'; }
+
+    // pre-fill profile on load
+    fetch('/api/instructor/info').then(function(r) { return r.json(); }).then(function(data) {
+        if (data.info) {
+            document.getElementById('p-first').value = data.info.first_name;
+            document.getElementById('p-last').value = data.info.last_name;
+        }
+    });
+</script>
+{% endblock %}

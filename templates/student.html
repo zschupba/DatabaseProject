@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Student Portal{% endblock %}
+
+{% block nav_links %}
+<a href="/student" class="active">My Portal</a>
+{% endblock %}
+
+{% block content %}
+<h1>Student Portal</h1>
+
+<div id="form-alert" style="display:none;"></div>
+
+<div class="card">
+    <h3>My Enrolled Classes</h3>
+
+    <label style="display:inline; margin-right:0.5rem;">Semester:</label>
+    <select id="my-sem" style="width:auto; display:inline; margin-right:1rem;">
+        <option value="">All</option>
+        <option value="Spring">Spring</option>
+        <option value="Fall  ">Fall</option>
+        <option value="Summer">Summer</option>
+    </select>
+
+    <label style="display:inline; margin-right:0.5rem;">Year:</label>
+    <input type="number" id="my-year" placeholder="All" style="width:80px; display:inline; margin-right:0.5rem;">
+
+    <button onclick="loadMyClasses()">Filter</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Course</th>
+                <th>Credits</th>
+                <th>Semester</th>
+                <th>Year</th>
+                <th>Day / Time</th>
+                <th>Room</th>
+                <th>Grade</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="my-classes-body">
+            <tr><td colspan="8">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h3>Register for a Section</h3>
+
+    <label style="display:inline; margin-right:0.5rem;">Semester:</label>
+    <select id="reg-sem" style="width:auto; display:inline; margin-right:1rem;">
+        <option value="Spring">Spring</option>
+        <option value="Fall  ">Fall</option>
+        <option value="Summer">Summer</option>
+    </select>
+
+    <label style="display:inline; margin-right:0.5rem;">Year:</label>
+    <input type="number" id="reg-year" value="2025" style="width:80px; display:inline; margin-right:0.5rem;">
+
+    <button onclick="loadAvailable()">Search Sections</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Section ID</th>
+                <th>Course</th>
+                <th>Credits</th>
+                <th>Day / Time</th>
+                <th>Room</th>
+                <th>Spots Left</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="available-body">
+            <tr><td colspan="7">Select a semester and click Search.</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h3>My Advisor</h3>
+    <div id="advisor-info">
+        <button onclick="loadAdvisor()">Load Advisor Info</button>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Update My Info</h3>
+    <p>You can update your name and email. Your Student ID cannot be changed.</p>
+
+    <label>First Name:</label>
+    <input type="text" id="p-first">
+
+    <label>Last Name:</label>
+    <input type="text" id="p-last">
+
+    <label>Email:</label>
+    <input type="text" id="p-email">
+
+    <button class="btn-green" onclick="saveProfile()">Save Changes</button>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function showAlert(type, msg) {
+        var el = document.getElementById('form-alert');
+        el.className = 'alert alert-' + type;
+        el.textContent = msg;
+        el.style.display = 'block';
+        if (type === 'success') setTimeout(function() { el.style.display = 'none'; }, 4000);
+    }
+
+    async function loadMyClasses() {
+        var sem = document.getElementById('my-sem').value;
+        var year = document.getElementById('my-year').value;
+        var tbody = document.getElementById('my-classes-body');
+        tbody.innerHTML = '<tr><td colspan="8">Loading...</td></tr>';
+        try {
+            var res = await fetch('/api/student/my_sections?semester=' + encodeURIComponent(sem) + '&year=' + year);
+            var data = await res.json();
+            if (data.error) { tbody.innerHTML = '<tr><td colspan="8">Error: ' + data.error + '</td></tr>'; return; }
+            if (!data.sections.length) { tbody.innerHTML = '<tr><td colspan="8">No classes found.</td></tr>'; return; }
+            tbody.innerHTML = '';
+            data.sections.forEach(function(s) {
+                var tr = document.createElement('tr');
+                var time = s.day_of_week ? s.day_of_week + ' ' + (s.start_time ? s.start_time.substring(0, 5) : '') : '-';
+                var room = s.building_name ? s.building_name + ' ' + s.room_number : '-';
+                tr.innerHTML = '<td>' + s.course_title + '</td>' +
+                    '<td>' + s.credits + '</td>' +
+                    '<td>' + s.semester.trim() + '</td>' +
+                    '<td>' + s.year + '</td>' +
+                    '<td>' + time + '</td>' +
+                    '<td>' + room + '</td>' +
+                    '<td>' + (s.grade || '-') + '</td>' +
+                    '<td><button class="btn-red" onclick="dropClass(' + s.enrollment_id + ', \'' + s.course_title + '\')">Drop</button></td>';
+                tbody.appendChild(tr);
+            });
+        } catch (err) { tbody.innerHTML = '<tr><td colspan="8">Network error.</td></tr>'; }
+    }
+
+    async function dropClass(enrollmentId, courseName) {
+        if (!confirm('Drop "' + courseName + '"? This cannot be undone.')) return;
+        try {
+            var res = await fetch('/api/student/drop', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enrollment_id: enrollmentId })
+            });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Dropped ' + courseName + '.');
+            loadMyClasses();
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    async function loadAvailable() {
+        var sem = document.getElementById('reg-sem').value;
+        var year = document.getElementById('reg-year').value;
+        var tbody = document.getElementById('available-body');
+        tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+        try {
+            var res = await fetch('/api/student/sections?semester=' + encodeURIComponent(sem) + '&year=' + year);
+            var data = await res.json();
+            if (data.error) { tbody.innerHTML = '<tr><td colspan="7">Error: ' + data.error + '</td></tr>'; return; }
+            if (!data.sections.length) { tbody.innerHTML = '<tr><td colspan="7">No sections available.</td></tr>'; return; }
+            tbody.innerHTML = '';
+            data.sections.forEach(function(s) {
+                var spotsLeft = (s.capacity || 0) - (s.enrolled || 0);
+                var full = spotsLeft <= 0;
+                var tr = document.createElement('tr');
+                var time = s.day_of_week ? s.day_of_week + ' ' + (s.start_time ? s.start_time.substring(0, 5) : '') : '-';
+                var room = s.building_name ? s.building_name + ' ' + s.room_number : '-';
+                tr.innerHTML = '<td>' + s.section_id + '</td>' +
+                    '<td>' + s.course_title + '</td>' +
+                    '<td>' + s.credits + '</td>' +
+                    '<td>' + time + '</td>' +
+                    '<td>' + room + '</td>' +
+                    '<td>' + (full ? 'Full' : spotsLeft) + '</td>' +
+                    '<td>' + (full ? '' : '<button class="btn-green" onclick="enroll(' + s.section_id + ', \'' + s.course_title + '\')">Enroll</button>') + '</td>';
+                tbody.appendChild(tr);
+            });
+        } catch (err) { tbody.innerHTML = '<tr><td colspan="7">Network error.</td></tr>'; }
+    }
+
+    async function enroll(sectionId, courseName) {
+        if (!confirm('Enroll in "' + courseName + '"?')) return;
+        var today = new Date().toISOString().split('T')[0];
+        try {
+            var res = await fetch('/api/student/enroll', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ section_id: sectionId, date_enrolled: today })
+            });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Enrolled in ' + courseName + '.');
+            loadAvailable();
+            loadMyClasses();
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    async function loadAdvisor() {
+        var el = document.getElementById('advisor-info');
+        el.textContent = 'Loading...';
+        try {
+            var res = await fetch('/api/student/advisor');
+            var data = await res.json();
+            if (data.error || !data.advisor) { el.textContent = 'No advisor assigned.'; return; }
+            var a = data.advisor;
+            el.innerHTML = '<p><strong>Name:</strong> ' + a.first_name + ' ' + a.last_name + '</p>' +
+                '<p><strong>Department:</strong> ' + (a.dept_name || '-') + '</p>' +
+                '<p><strong>Advising Since:</strong> ' + (a.start_date ? a.start_date.split('T')[0] : '-') + '</p>';
+        } catch (err) { el.textContent = 'Could not load advisor info.'; }
+    }
+
+    async function saveProfile() {
+        var payload = {
+            first_name: document.getElementById('p-first').value.trim(),
+            last_name: document.getElementById('p-last').value.trim(),
+            email: document.getElementById('p-email').value.trim()
+        };
+        try {
+            var res = await fetch('/api/student/update_self', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Profile updated.');
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    // pre-fill profile on load
+    fetch('/api/student/info').then(function(r) { return r.json(); }).then(function(data) {
+        if (data.info) {
+            document.getElementById('p-first').value = data.info.first_name;
+            document.getElementById('p-last').value = data.info.last_name;
+            document.getElementById('p-email').value = data.info.email;
+        }
+    });
+
+    loadMyClasses();
+</script>
+{% endblock %}
