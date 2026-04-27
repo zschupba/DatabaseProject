@@ -3,7 +3,7 @@
 {% block title %}Instructor Portal{% endblock %}
 
 {% block nav_links %}
-<a href="/instructor" class="active">My Sections</a>
+<a href="/instructor" class="active">My Portal</a>
 {% endblock %}
 
 {% block content %}
@@ -14,7 +14,7 @@
 <div class="card">
     <h3>My Sections</h3>
 
-    <label>Semester:</label>
+    <label style="display:inline; margin-right:0.5rem;">Semester:</label>
     <select id="sem-filter" style="width:auto; display:inline; margin-right:1rem;">
         <option value="Spring">Spring</option>
         <option value="Fall  ">Fall</option>
@@ -78,6 +78,67 @@
     <button class="btn-grey" onclick="closeGrade()">Cancel</button>
 </div>
 
+<hr>
+
+<div class="card">
+    <h3>My Advisees</h3>
+    <button onclick="loadAdvisees()">Refresh List</button>
+    <table>
+        <thead>
+            <tr>
+                <th>Student ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Since</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="advisees-body">
+            <tr><td colspan="5">Click Refresh to load.</td></tr>
+        </tbody>
+    </table>
+
+    <hr>
+    <h3>Add Advisee</h3>
+    <label>Student ID:</label>
+    <input type="number" id="advisee-student-id" placeholder="100000001">
+    <button class="btn-green" onclick="addAdvisee()">Add Advisee</button>
+</div>
+
+<hr>
+
+<div class="card">
+    <h3>Modify Course Prerequisites</h3>
+
+    <label>Course:</label>
+    <select id="prereq-course" onchange="loadPrereqs()">
+        <option value="">-- Select a course --</option>
+    </select>
+
+    <div id="prereq-list-card" style="display:none;">
+        <h4>Current Prerequisites</h4>
+        <table>
+            <thead><tr><th>Prereq Code</th><th>Title</th><th>Type</th><th>Actions</th></tr></thead>
+            <tbody id="prereq-body"></tbody>
+        </table>
+
+        <hr>
+        <h4>Add Prerequisite</h4>
+        <label>Prerequisite Course:</label>
+        <select id="new-prereq-course">
+            <option value="">-- Select --</option>
+        </select>
+        <label>Type:</label>
+        <select id="prereq-type">
+            <option value="required">required</option>
+            <option value="recommended">recommended</option>
+        </select>
+        <button class="btn-green" onclick="addPrereq()">Add Prerequisite</button>
+    </div>
+</div>
+
+<hr>
+
 <div class="card">
     <h3>Update My Info</h3>
     <p>You can update your name. Your ID cannot be changed.</p>
@@ -103,6 +164,8 @@
         el.style.display = 'block';
         if (type === 'success') setTimeout(function() { el.style.display = 'none'; }, 4000);
     }
+
+    // ── SECTIONS ──
 
     async function loadSections() {
         var sem = document.getElementById('sem-filter').value;
@@ -195,6 +258,146 @@
         } catch (err) { showAlert('error', 'Network error.'); }
     }
 
+    function closeRoster() { document.getElementById('roster-card').style.display = 'none'; }
+    function closeGrade() { document.getElementById('grade-card').style.display = 'none'; }
+
+    // ── ADVISEES ──
+
+    async function loadAdvisees() {
+        var tbody = document.getElementById('advisees-body');
+        tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+        try {
+            var res = await fetch('/api/instructor/my_advisees');
+            var data = await res.json();
+            if (data.error) { tbody.innerHTML = '<tr><td colspan="5">Error: ' + data.error + '</td></tr>'; return; }
+            if (!data.advisees.length) { tbody.innerHTML = '<tr><td colspan="5">No advisees.</td></tr>'; return; }
+            tbody.innerHTML = '';
+            data.advisees.forEach(function(a) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + a.student_id + '</td>' +
+                    '<td>' + a.first_name + ' ' + a.last_name + '</td>' +
+                    '<td>' + a.email + '</td>' +
+                    '<td>' + (a.start_date ? a.start_date.split('T')[0] : '-') + '</td>' +
+                    '<td><button class="btn-red" onclick="removeAdvisee(' + a.student_id + ', \'' + a.first_name + '\')">Remove</button></td>';
+                tbody.appendChild(tr);
+            });
+        } catch (err) { tbody.innerHTML = '<tr><td colspan="5">Network error.</td></tr>'; }
+    }
+
+    async function addAdvisee() {
+        var studentId = document.getElementById('advisee-student-id').value;
+        if (!studentId) { showAlert('error', 'Enter a student ID.'); return; }
+        try {
+            var res = await fetch('/api/instructor/add_advisor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ student_id: studentId })
+            });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Student added as advisee.');
+            document.getElementById('advisee-student-id').value = '';
+            loadAdvisees();
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    async function removeAdvisee(studentId, studentName) {
+        if (!confirm('Remove ' + studentName + ' as your advisee?')) return;
+        try {
+            var res = await fetch('/api/instructor/remove_advisor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ student_id: studentId })
+            });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Advisee removed.');
+            loadAdvisees();
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    // ── PREREQUISITES ──
+
+    async function populateCourseDropdowns() {
+        try {
+            var res = await fetch('/api/instructor/courses');
+            var data = await res.json();
+            if (data.error || !data.courses.length) return;
+            var sel1 = document.getElementById('prereq-course');
+            var sel2 = document.getElementById('new-prereq-course');
+            data.courses.forEach(function(c) {
+                var opt1 = document.createElement('option');
+                opt1.value = c.course_code;
+                opt1.textContent = c.title + ' (' + c.course_code + ')';
+                sel1.appendChild(opt1);
+
+                var opt2 = document.createElement('option');
+                opt2.value = c.course_code;
+                opt2.textContent = c.title + ' (' + c.course_code + ')';
+                sel2.appendChild(opt2);
+            });
+        } catch (err) {}
+    }
+
+    async function loadPrereqs() {
+        var courseCode = document.getElementById('prereq-course').value;
+        if (!courseCode) { document.getElementById('prereq-list-card').style.display = 'none'; return; }
+        document.getElementById('prereq-list-card').style.display = 'block';
+        var tbody = document.getElementById('prereq-body');
+        tbody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+        try {
+            var res = await fetch('/api/instructor/prereqs/' + courseCode);
+            var data = await res.json();
+            if (data.error) { tbody.innerHTML = '<tr><td colspan="4">Error: ' + data.error + '</td></tr>'; return; }
+            if (!data.prereqs.length) { tbody.innerHTML = '<tr><td colspan="4">No prerequisites.</td></tr>'; return; }
+            tbody.innerHTML = '';
+            data.prereqs.forEach(function(p) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + p.prereq_course_id + '</td>' +
+                    '<td>' + p.title + '</td>' +
+                    '<td>' + (p.req_type || '-') + '</td>' +
+                    '<td><button class="btn-red" onclick="removePrereq(' + courseCode + ', ' + p.prereq_course_id + ')">Remove</button></td>';
+                tbody.appendChild(tr);
+            });
+        } catch (err) { tbody.innerHTML = '<tr><td colspan="4">Network error.</td></tr>'; }
+    }
+
+    async function addPrereq() {
+        var courseCode = document.getElementById('prereq-course').value;
+        var prereqCode = document.getElementById('new-prereq-course').value;
+        var reqType = document.getElementById('prereq-type').value;
+        if (!courseCode || !prereqCode) { showAlert('error', 'Select both courses.'); return; }
+        if (courseCode === prereqCode) { showAlert('error', 'A course cannot be its own prerequisite.'); return; }
+        try {
+            var res = await fetch('/api/instructor/prereqs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ course_code: courseCode, prereq_course_id: prereqCode, req_type: reqType })
+            });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Prerequisite added.');
+            loadPrereqs();
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    async function removePrereq(courseCode, prereqCode) {
+        if (!confirm('Remove this prerequisite?')) return;
+        try {
+            var res = await fetch('/api/instructor/prereqs', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ course_code: courseCode, prereq_course_id: prereqCode })
+            });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Prerequisite removed.');
+            loadPrereqs();
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    // ── PROFILE ──
+
     async function saveProfile() {
         var payload = {
             first_name: document.getElementById('p-first').value.trim(),
@@ -212,9 +415,6 @@
         } catch (err) { showAlert('error', 'Network error.'); }
     }
 
-    function closeRoster() { document.getElementById('roster-card').style.display = 'none'; }
-    function closeGrade() { document.getElementById('grade-card').style.display = 'none'; }
-
     // pre-fill profile on load
     fetch('/api/instructor/info').then(function(r) { return r.json(); }).then(function(data) {
         if (data.info) {
@@ -222,5 +422,8 @@
             document.getElementById('p-last').value = data.info.last_name;
         }
     });
+
+    populateCourseDropdowns();
+    loadAdvisees();
 </script>
 {% endblock %}
