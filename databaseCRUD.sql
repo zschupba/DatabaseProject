@@ -389,5 +389,20 @@ BEGIN
     DELETE FROM useraccount WHERE user_id = p_user_id;
 END //
 
+CREATE PROCEDURE instructor_section_roster(IN p_section_id INT)
+BEGIN
+    SELECT 
+        e.enrollment_id,
+        s.student_id,
+        s.first_name,
+        s.last_name,
+        s.email,
+        e.grade,
+        e.date_enrolled
+    FROM enrolls e
+    JOIN student s ON s.student_id = e.student_id
+    WHERE e.section_id = p_section_id
+    ORDER BY s.last_name, s.first_name;
+END // 
 
 DELIMITER ;
