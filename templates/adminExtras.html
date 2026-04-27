@@ -1,0 +1,407 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Extras{% endblock %}
+
+{% block nav_links %}
+<a href="/admin">Dashboard</a>
+<a href="/admin/students">Students</a>
+<a href="/admin/instructors">Instructors</a>
+<a href="/admin/sections">Sections</a>
+<a href="/admin/extras" class="active">Courses/Rooms/Depts/Slots</a>
+{% endblock %}
+
+{% block content %}
+<h1>Manage Courses, Classrooms, Departments & Timeslots</h1>
+
+<div id="form-alert" style="display:none;"></div>
+
+<hr>
+<h2>Courses</h2>
+
+<div class="card">
+    <h3>Add Course</h3>
+    <label>Course Code:</label>
+    <input type="number" id="c-code" placeholder="601">
+    <label>Title:</label>
+    <input type="text" id="c-title" placeholder="Intro to Databases">
+    <label>Credits:</label>
+    <input type="number" id="c-credits" placeholder="3">
+    <label>Department:</label>
+    <select id="c-dept">
+        <option value="">-- Select --</option>
+        {% for d in departments %}
+        <option value="{{ d.dept_id }}">{{ d.dept_name }}</option>
+        {% endfor %}
+    </select>
+    <button class="btn-green" onclick="addCourse()">Add Course</button>
+    <button class="btn-grey" onclick="resetCourse()">Reset</button>
+</div>
+
+<div class="card">
+    <h3>All Courses</h3>
+    <button onclick="loadCourses()">Refresh</button>
+    <table>
+        <thead><tr><th>Code</th><th>Title</th><th>Credits</th><th>Department</th><th>Actions</th></tr></thead>
+        <tbody id="courses-body"><tr><td colspan="5">Click Refresh to load.</td></tr></tbody>
+    </table>
+</div>
+
+<hr>
+<h2>Classrooms</h2>
+
+<div class="card">
+    <h3>Add Classroom</h3>
+    <label>Classroom ID:</label>
+    <input type="number" id="cl-id" placeholder="205">
+    <label>Building:</label>
+    <select id="cl-building">
+        <option value="">-- Select --</option>
+        {% for b in buildings %}
+        <option value="{{ b.building_id }}">{{ b.name }}</option>
+        {% endfor %}
+    </select>
+    <label>Room Number:</label>
+    <input type="number" id="cl-room" placeholder="101">
+    <label>Capacity:</label>
+    <input type="number" id="cl-cap" placeholder="30">
+    <button class="btn-green" onclick="addClassroom()">Add Classroom</button>
+    <button class="btn-grey" onclick="resetClassroom()">Reset</button>
+</div>
+
+<div class="card">
+    <h3>All Classrooms</h3>
+    <button onclick="loadClassrooms()">Refresh</button>
+    <table>
+        <thead><tr><th>ID</th><th>Building</th><th>Room</th><th>Capacity</th><th>Actions</th></tr></thead>
+        <tbody id="classrooms-body"><tr><td colspan="5">Click Refresh to load.</td></tr></tbody>
+    </table>
+</div>
+
+<hr>
+<h2>Departments</h2>
+
+<div class="card">
+    <h3>Add Department</h3>
+    <label>Department ID:</label>
+    <input type="number" id="d-id" placeholder="40">
+    <label>Name:</label>
+    <input type="text" id="d-name" placeholder="Biology" maxlength="16">
+    <label>Office Building:</label>
+    <select id="d-building">
+        <option value="">-- Select --</option>
+        {% for b in buildings %}
+        <option value="{{ b.building_id }}">{{ b.name }}</option>
+        {% endfor %}
+    </select>
+    <label>Budget:</label>
+    <input type="number" id="d-budget" placeholder="250000.00" step="0.01">
+    <button class="btn-green" onclick="addDept()">Add Department</button>
+    <button class="btn-grey" onclick="resetDept()">Reset</button>
+</div>
+
+<div class="card">
+    <h3>All Departments</h3>
+    <button onclick="loadDepts()">Refresh</button>
+    <table>
+        <thead><tr><th>ID</th><th>Name</th><th>Building</th><th>Budget</th><th>Actions</th></tr></thead>
+        <tbody id="depts-body"><tr><td colspan="5">Click Refresh to load.</td></tr></tbody>
+    </table>
+</div>
+
+<hr>
+<h2>Timeslots</h2>
+
+<div class="card">
+    <h3>Add Timeslot</h3>
+    <label>Slot ID:</label>
+    <input type="number" id="t-id" placeholder="6">
+    <label>Day of Week:</label>
+    <select id="t-day">
+        <option value="Monday">Monday</option>
+        <option value="Tuesday">Tuesday</option>
+        <option value="Wednesday">Wednesday</option>
+        <option value="Thursday">Thursday</option>
+        <option value="Friday">Friday</option>
+        <option value="Saturday">Saturday</option>
+    </select>
+    <label>Start Time:</label>
+    <input type="time" id="t-start">
+    <label>End Time:</label>
+    <input type="time" id="t-end">
+    <button class="btn-green" onclick="addSlot()">Add Timeslot</button>
+    <button class="btn-grey" onclick="resetSlot()">Reset</button>
+</div>
+
+<div class="card">
+    <h3>All Timeslots</h3>
+    <button onclick="loadSlots()">Refresh</button>
+    <table>
+        <thead><tr><th>ID</th><th>Day</th><th>Start</th><th>End</th><th>Actions</th></tr></thead>
+        <tbody id="slots-body"><tr><td colspan="5">Click Refresh to load.</td></tr></tbody>
+    </table>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function showAlert(type, msg) {
+        var el = document.getElementById('form-alert');
+        el.className = 'alert alert-' + type;
+        el.textContent = msg;
+        el.style.display = 'block';
+        if (type === 'success') setTimeout(function() { el.style.display = 'none'; }, 4000);
+    }
+
+    // ── COURSES ──
+
+    async function addCourse() {
+        var payload = {
+            course_code: document.getElementById('c-code').value,
+            title: document.getElementById('c-title').value.trim(),
+            credits: document.getElementById('c-credits').value,
+            dept_id: document.getElementById('c-dept').value
+        };
+        if (!payload.course_code || !payload.title || !payload.credits) {
+            showAlert('error', 'Course code, title, and credits are required.');
+            return;
+        }
+        try {
+            var res = await fetch('/api/admin/courses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Course added.');
+            resetCourse();
+            loadCourses();
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    async function deleteCourse(code, title) {
+        if (!confirm('Delete course "' + title + '"?')) return;
+        try {
+            var res = await fetch('/api/admin/courses/' + code, { method: 'DELETE' });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Course deleted.');
+            loadCourses();
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    async function loadCourses() {
+        var tbody = document.getElementById('courses-body');
+        tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+        try {
+            var res = await fetch('/api/admin/courses');
+            var data = await res.json();
+            if (data.error) { tbody.innerHTML = '<tr><td colspan="5">Error: ' + data.error + '</td></tr>'; return; }
+            if (!data.courses.length) { tbody.innerHTML = '<tr><td colspan="5">No courses found.</td></tr>'; return; }
+            tbody.innerHTML = '';
+            data.courses.forEach(function(c) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + c.course_code + '</td><td>' + c.title + '</td><td>' + c.credits + '</td><td>' + (c.dept_name || '-') + '</td>' +
+                    '<td><button class="btn-red" onclick="deleteCourse(' + c.course_code + ', \'' + c.title.replace(/'/g, '') + '\')">Delete</button></td>';
+                tbody.appendChild(tr);
+            });
+        } catch (err) { tbody.innerHTML = '<tr><td colspan="5">Network error.</td></tr>'; }
+    }
+
+    function resetCourse() {
+        document.getElementById('c-code').value = '';
+        document.getElementById('c-title').value = '';
+        document.getElementById('c-credits').value = '';
+        document.getElementById('c-dept').value = '';
+    }
+
+    // ── CLASSROOMS ──
+
+    async function addClassroom() {
+        var payload = {
+            classroom_id: document.getElementById('cl-id').value,
+            building_id: document.getElementById('cl-building').value,
+            room_number: document.getElementById('cl-room').value,
+            capacity: document.getElementById('cl-cap').value
+        };
+        if (!payload.classroom_id || !payload.building_id || !payload.room_number) {
+            showAlert('error', 'ID, building, and room number are required.');
+            return;
+        }
+        try {
+            var res = await fetch('/api/admin/classrooms', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Classroom added.');
+            resetClassroom();
+            loadClassrooms();
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    async function deleteClassroom(id) {
+        if (!confirm('Delete classroom ' + id + '?')) return;
+        try {
+            var res = await fetch('/api/admin/classrooms/' + id, { method: 'DELETE' });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Classroom deleted.');
+            loadClassrooms();
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    async function loadClassrooms() {
+        var tbody = document.getElementById('classrooms-body');
+        tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+        try {
+            var res = await fetch('/api/admin/classrooms');
+            var data = await res.json();
+            if (data.error) { tbody.innerHTML = '<tr><td colspan="5">Error: ' + data.error + '</td></tr>'; return; }
+            if (!data.classrooms.length) { tbody.innerHTML = '<tr><td colspan="5">No classrooms found.</td></tr>'; return; }
+            tbody.innerHTML = '';
+            data.classrooms.forEach(function(c) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + c.classroom_id + '</td><td>' + c.building_name + '</td><td>' + c.room_number + '</td><td>' + (c.capacity || '-') + '</td>' +
+                    '<td><button class="btn-red" onclick="deleteClassroom(' + c.classroom_id + ')">Delete</button></td>';
+                tbody.appendChild(tr);
+            });
+        } catch (err) { tbody.innerHTML = '<tr><td colspan="5">Network error.</td></tr>'; }
+    }
+
+    function resetClassroom() {
+        document.getElementById('cl-id').value = '';
+        document.getElementById('cl-building').value = '';
+        document.getElementById('cl-room').value = '';
+        document.getElementById('cl-cap').value = '';
+    }
+
+    // ── DEPARTMENTS ──
+
+    async function addDept() {
+        var payload = {
+            dept_id: document.getElementById('d-id').value,
+            dept_name: document.getElementById('d-name').value.trim(),
+            office_building: document.getElementById('d-building').value,
+            budget: document.getElementById('d-budget').value
+        };
+        if (!payload.dept_id || !payload.dept_name) {
+            showAlert('error', 'ID and name are required.');
+            return;
+        }
+        try {
+            var res = await fetch('/api/admin/departments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Department added.');
+            resetDept();
+            loadDepts();
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    async function deleteDept(id, name) {
+        if (!confirm('Delete department "' + name + '"?')) return;
+        try {
+            var res = await fetch('/api/admin/departments/' + id, { method: 'DELETE' });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Department deleted.');
+            loadDepts();
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    async function loadDepts() {
+        var tbody = document.getElementById('depts-body');
+        tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+        try {
+            var res = await fetch('/api/admin/departments');
+            var data = await res.json();
+            if (data.error) { tbody.innerHTML = '<tr><td colspan="5">Error: ' + data.error + '</td></tr>'; return; }
+            if (!data.departments.length) { tbody.innerHTML = '<tr><td colspan="5">No departments found.</td></tr>'; return; }
+            tbody.innerHTML = '';
+            data.departments.forEach(function(d) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + d.dept_id + '</td><td>' + d.dept_name + '</td><td>' + (d.building_name || '-') + '</td><td>' + (d.budget ? '$' + parseFloat(d.budget).toLocaleString() : '-') + '</td>' +
+                    '<td><button class="btn-red" onclick="deleteDept(' + d.dept_id + ', \'' + d.dept_name + '\')">Delete</button></td>';
+                tbody.appendChild(tr);
+            });
+        } catch (err) { tbody.innerHTML = '<tr><td colspan="5">Network error.</td></tr>'; }
+    }
+
+    function resetDept() {
+        document.getElementById('d-id').value = '';
+        document.getElementById('d-name').value = '';
+        document.getElementById('d-building').value = '';
+        document.getElementById('d-budget').value = '';
+    }
+
+    // ── TIMESLOTS ──
+
+    async function addSlot() {
+        var payload = {
+            slot_id: document.getElementById('t-id').value,
+            day_of_week: document.getElementById('t-day').value,
+            start_time: document.getElementById('t-start').value,
+            end_time: document.getElementById('t-end').value
+        };
+        if (!payload.slot_id || !payload.start_time || !payload.end_time) {
+            showAlert('error', 'All fields are required.');
+            return;
+        }
+        try {
+            var res = await fetch('/api/admin/timeslots', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Timeslot added.');
+            resetSlot();
+            loadSlots();
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    async function deleteSlot(id) {
+        if (!confirm('Delete timeslot ' + id + '?')) return;
+        try {
+            var res = await fetch('/api/admin/timeslots/' + id, { method: 'DELETE' });
+            var data = await res.json();
+            if (data.error) { showAlert('error', data.error); return; }
+            showAlert('success', 'Timeslot deleted.');
+            loadSlots();
+        } catch (err) { showAlert('error', 'Network error.'); }
+    }
+
+    async function loadSlots() {
+        var tbody = document.getElementById('slots-body');
+        tbody.innerHTML = '<tr><td colspan="5">Loading...</td></tr>';
+        try {
+            var res = await fetch('/api/admin/timeslots');
+            var data = await res.json();
+            if (data.error) { tbody.innerHTML = '<tr><td colspan="5">Error: ' + data.error + '</td></tr>'; return; }
+            if (!data.timeslots.length) { tbody.innerHTML = '<tr><td colspan="5">No timeslots found.</td></tr>'; return; }
+            tbody.innerHTML = '';
+            data.timeslots.forEach(function(t) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + t.slot_id + '</td><td>' + t.day_of_week + '</td><td>' + t.start_time + '</td><td>' + t.end_time + '</td>' +
+                    '<td><button class="btn-red" onclick="deleteSlot(' + t.slot_id + ')">Delete</button></td>';
+                tbody.appendChild(tr);
+            });
+        } catch (err) { tbody.innerHTML = '<tr><td colspan="5">Network error.</td></tr>'; }
+    }
+
+    function resetSlot() {
+        document.getElementById('t-id').value = '';
+        document.getElementById('t-start').value = '';
+        document.getElementById('t-end').value = '';
+    }
+</script>
+{% endblock %}

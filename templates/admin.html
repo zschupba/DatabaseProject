@@ -4,10 +4,11 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block nav_links %}
-<a href="/admin" {% if active_page == 'dashboard' %}class="active"{% endif %}>Dashboard</a>
-<a href="/admin/students" {% if active_page == 'students' %}class="active"{% endif %}>Students</a>
-<a href="/admin/instructors" {% if active_page == 'instructors' %}class="active"{% endif %}>Instructors</a>
-<a href="/admin/sections" {% if active_page == 'sections' %}class="active"{% endif %}>Sections</a>
+<a href="/admin">Dashboard</a>
+<a href="/admin/students">Students</a>
+<a href="/admin/instructors">Instructors</a>
+<a href="/admin/sections">Sections</a>
+<a href="/admin/extras">Courses/Rooms/Depts/Slots</a>
 {% endblock %}
 
 {% block content %}
@@ -30,5 +31,11 @@
     <h3>Sections</h3>
     <p>Add, edit, or remove course sections. Assign instructors to sections.</p>
     <a href="/admin/sections"><button>Manage Sections</button></a>
+</div>
+
+<div class="card">
+    <h3>Courses, Classrooms, Departments & Timeslots</h3>
+    <p>Manage the remaining tables all in one place.</p>
+    <a href="/admin/extras"><button>Manage Extras</button></a>
 </div>
 {% endblock %}

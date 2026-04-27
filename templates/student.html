@@ -37,7 +37,7 @@
                 <th>Day / Time</th>
                 <th>Room</th>
                 <th>Grade</th>
-                <th>Action</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody id="my-classes-body">
@@ -45,6 +45,14 @@
         </tbody>
     </table>
 </div>
+
+<div class="card" id="section-info-card" style="display:none;">
+    <h3>Section Info</h3>
+    <button class="btn-grey" onclick="document.getElementById('section-info-card').style.display='none'">Close</button>
+    <div id="section-info-body"></div>
+</div>
+
+<hr>
 
 <div class="card">
     <h3>Register for a Section</h3>
@@ -70,7 +78,7 @@
                 <th>Day / Time</th>
                 <th>Room</th>
                 <th>Spots Left</th>
-                <th>Action</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody id="available-body">
@@ -79,12 +87,14 @@
     </table>
 </div>
 
+<hr>
+
 <div class="card">
     <h3>My Advisor</h3>
-    <div id="advisor-info">
-        <button onclick="loadAdvisor()">Load Advisor Info</button>
-    </div>
+    <div id="advisor-info"><p>Loading...</p></div>
 </div>
+
+<hr>
 
 <div class="card">
     <h3>Update My Info</h3>
@@ -113,6 +123,8 @@
         if (type === 'success') setTimeout(function() { el.style.display = 'none'; }, 4000);
     }
 
+    // ── MY CLASSES ──
+
     async function loadMyClasses() {
         var sem = document.getElementById('my-sem').value;
         var year = document.getElementById('my-year').value;
@@ -135,7 +147,10 @@
                     '<td>' + time + '</td>' +
                     '<td>' + room + '</td>' +
                     '<td>' + (s.grade || '-') + '</td>' +
-                    '<td><button class="btn-red" onclick="dropClass(' + s.enrollment_id + ', \'' + s.course_title + '\')">Drop</button></td>';
+                    '<td>' +
+                        '<button onclick="viewSectionInfo(' + s.section_id + ')">Info</button> ' +
+                        '<button class="btn-red" onclick="dropClass(' + s.enrollment_id + ', \'' + s.course_title.replace(/'/g, '') + '\')">Drop</button>' +
+                    '</td>';
                 tbody.appendChild(tr);
             });
         } catch (err) { tbody.innerHTML = '<tr><td colspan="8">Network error.</td></tr>'; }
@@ -155,6 +170,34 @@
             loadMyClasses();
         } catch (err) { showAlert('error', 'Network error.'); }
     }
+
+    // ── SECTION INFO ──
+
+    async function viewSectionInfo(sectionId) {
+        var card = document.getElementById('section-info-card');
+        var body = document.getElementById('section-info-body');
+        card.style.display = 'block';
+        body.innerHTML = '<p>Loading...</p>';
+        try {
+            var res = await fetch('/api/student/section_info/' + sectionId);
+            var data = await res.json();
+            if (data.error || !data.info) { body.innerHTML = '<p>Could not load section info.</p>'; return; }
+            var i = data.info;
+            var time = i.day_of_week ? i.day_of_week + ' ' + (i.start_time ? i.start_time.substring(0,5) : '') + ' - ' + (i.end_time ? i.end_time.substring(0,5) : '') : '-';
+            var room = i.building_name ? i.building_name + ' Room ' + i.room_number : '-';
+            var instructor = i.instructor_first ? i.instructor_first + ' ' + i.instructor_last : 'Not assigned';
+            body.innerHTML =
+                '<p><strong>Course:</strong> ' + i.course_title + ' (' + i.credits + ' credits)</p>' +
+                '<p><strong>Section ID:</strong> ' + i.section_id + '</p>' +
+                '<p><strong>Semester:</strong> ' + i.semester.trim() + ' ' + i.year + '</p>' +
+                '<p><strong>Time:</strong> ' + time + '</p>' +
+                '<p><strong>Room:</strong> ' + room + '</p>' +
+                '<p><strong>Enrolled:</strong> ' + i.enrolled + ' / ' + (i.capacity || '?') + '</p>' +
+                '<p><strong>Instructor:</strong> ' + instructor + '</p>';
+        } catch (err) { body.innerHTML = '<p>Network error.</p>'; }
+    }
+
+    // ── REGISTER ──
 
     async function loadAvailable() {
         var sem = document.getElementById('reg-sem').value;
@@ -179,7 +222,10 @@
                     '<td>' + time + '</td>' +
                     '<td>' + room + '</td>' +
                     '<td>' + (full ? 'Full' : spotsLeft) + '</td>' +
-                    '<td>' + (full ? '' : '<button class="btn-green" onclick="enroll(' + s.section_id + ', \'' + s.course_title + '\')">Enroll</button>') + '</td>';
+                    '<td>' +
+                        '<button onclick="viewSectionInfo(' + s.section_id + ')">Info</button> ' +
+                        (full ? '' : '<button class="btn-green" onclick="enroll(' + s.section_id + ', \'' + s.course_title.replace(/'/g, '') + '\')">Enroll</button>') +
+                    '</td>';
                 tbody.appendChild(tr);
             });
         } catch (err) { tbody.innerHTML = '<tr><td colspan="7">Network error.</td></tr>'; }
@@ -202,19 +248,22 @@
         } catch (err) { showAlert('error', 'Network error.'); }
     }
 
+    // ── ADVISOR ──
+
     async function loadAdvisor() {
         var el = document.getElementById('advisor-info');
-        el.textContent = 'Loading...';
         try {
             var res = await fetch('/api/student/advisor');
             var data = await res.json();
-            if (data.error || !data.advisor) { el.textContent = 'No advisor assigned.'; return; }
+            if (data.error || !data.advisor) { el.innerHTML = '<p>No advisor assigned.</p>'; return; }
             var a = data.advisor;
             el.innerHTML = '<p><strong>Name:</strong> ' + a.first_name + ' ' + a.last_name + '</p>' +
                 '<p><strong>Department:</strong> ' + (a.dept_name || '-') + '</p>' +
                 '<p><strong>Advising Since:</strong> ' + (a.start_date ? a.start_date.split('T')[0] : '-') + '</p>';
-        } catch (err) { el.textContent = 'Could not load advisor info.'; }
+        } catch (err) { el.innerHTML = '<p>Could not load advisor info.</p>'; }
     }
+
+    // ── PROFILE ──
 
     async function saveProfile() {
         var payload = {
@@ -234,7 +283,7 @@
         } catch (err) { showAlert('error', 'Network error.'); }
     }
 
-    // pre-fill profile on load
+    // pre-fill profile and load advisor on page load
     fetch('/api/student/info').then(function(r) { return r.json(); }).then(function(data) {
         if (data.info) {
             document.getElementById('p-first').value = data.info.first_name;
@@ -244,5 +293,6 @@
     });
 
     loadMyClasses();
+    loadAdvisor();
 </script>
 {% endblock %}

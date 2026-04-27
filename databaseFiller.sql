@@ -78,19 +78,51 @@ INSERT INTO course VALUES (501, 'Circuits I',            3, 30);
 INSERT INTO prereq VALUES (302, 301, 'required');
 INSERT INTO prereq VALUES (402, 401, 'required');
  
--- Sections 
+-- Sections (Spring 2025 - current)
 INSERT INTO section VALUES (1001, 'Spring', 2025, 30, 301, 201, 1);
 INSERT INTO section VALUES (1002, 'Spring', 2025, 25, 302, 202, 3);
 INSERT INTO section VALUES (1003, 'Spring', 2025, 40, 401, 203, 2);
 INSERT INTO section VALUES (1004, 'Spring', 2025, 35, 501, 204, 4);
+
+-- Sections (Fall 2024 - past semester)
+INSERT INTO section VALUES (2001, 'Fall', 2024, 30, 301, 201, 1);
+INSERT INTO section VALUES (2002, 'Fall', 2024, 25, 302, 202, 3);
+INSERT INTO section VALUES (2003, 'Fall', 2024, 40, 401, 203, 2);
+INSERT INTO section VALUES (2004, 'Fall', 2024, 35, 501, 204, 4);
+INSERT INTO section VALUES (2005, 'Fall', 2024, 30, 302, 201, 4);
+
+-- Sections (Spring 2024 - earlier past semester)
+INSERT INTO section VALUES (3001, 'Spring', 2024, 30, 301, 201, 1);
+INSERT INTO section VALUES (3002, 'Spring', 2024, 25, 302, 202, 3);
+INSERT INTO section VALUES (3003, 'Spring', 2024, 40, 401, 203, 2);
+
+-- Sections (Fall 2023 - even earlier)
+INSERT INTO section VALUES (4001, 'Fall', 2023, 30, 301, 201, 1);
+INSERT INTO section VALUES (4002, 'Fall', 2023, 25, 302, 202, 3);
  
--- Teaches 
+-- Teaches (Spring 2025)
 INSERT INTO teaches VALUES (1, 1001, 1001);
 INSERT INTO teaches VALUES (2, 1001, 1002);
 INSERT INTO teaches VALUES (3, 1002, 1003);
 INSERT INTO teaches VALUES (4, 1003, 1004);
+
+-- Teaches (Fall 2024)
+INSERT INTO teaches VALUES (5, 1001, 2001);
+INSERT INTO teaches VALUES (6, 1001, 2002);
+INSERT INTO teaches VALUES (7, 1002, 2003);
+INSERT INTO teaches VALUES (8, 1003, 2004);
+INSERT INTO teaches VALUES (9, 1001, 2005);
+
+-- Teaches (Spring 2024)
+INSERT INTO teaches VALUES (10, 1001, 3001);
+INSERT INTO teaches VALUES (11, 1002, 3002);
+INSERT INTO teaches VALUES (12, 1002, 3003);
+
+-- Teaches (Fall 2023)
+INSERT INTO teaches VALUES (13, 1001, 4001);
+INSERT INTO teaches VALUES (14, 1002, 4002);
  
--- Enrollments
+-- Enrollments (Spring 2025 - current semester, no grades yet)
 INSERT INTO enrolls VALUES (1,  NULL, '2025-01-10', 100000001, 1001);
 INSERT INTO enrolls VALUES (2,  NULL, '2025-01-10', 100000002, 1001);
 INSERT INTO enrolls VALUES (3,  NULL, '2025-01-10', 100000007, 1001);
@@ -101,6 +133,40 @@ INSERT INTO enrolls VALUES (7,  NULL, '2025-01-12', 100000005, 1004);
 INSERT INTO enrolls VALUES (8,  NULL, '2025-01-12', 100000006, 1004);
 INSERT INTO enrolls VALUES (9,  NULL, '2025-01-12', 100000008, 1003);
 INSERT INTO enrolls VALUES (10, NULL, '2025-01-13', 100000009, 1004);
+
+-- Enrollments (Fall 2024 - with grades)
+INSERT INTO enrolls VALUES (11, 'A',  '2024-08-28', 100000001, 2001);
+INSERT INTO enrolls VALUES (12, 'B+', '2024-08-28', 100000002, 2001);
+INSERT INTO enrolls VALUES (13, 'A-', '2024-08-28', 100000007, 2001);
+INSERT INTO enrolls VALUES (14, 'B',  '2024-09-01', 100000001, 2002);
+INSERT INTO enrolls VALUES (15, 'A',  '2024-09-01', 100000003, 2003);
+INSERT INTO enrolls VALUES (16, 'C+',  '2024-09-01', 100000004, 2003);
+INSERT INTO enrolls VALUES (17, 'B+', '2024-09-02', 100000005, 2004);
+INSERT INTO enrolls VALUES (18, 'A-', '2024-09-02', 100000006, 2004);
+INSERT INTO enrolls VALUES (19, 'B',  '2024-09-02', 100000008, 2003);
+INSERT INTO enrolls VALUES (20, 'A',  '2024-09-03', 100000009, 2004);
+INSERT INTO enrolls VALUES (21, 'C',  '2024-09-03', 100000010, 2005);
+INSERT INTO enrolls VALUES (22, 'B-', '2024-09-03', 100000002, 2005);
+
+-- Enrollments (Spring 2024 - with grades)
+INSERT INTO enrolls VALUES (23, 'A',  '2024-01-15', 100000001, 3001);
+INSERT INTO enrolls VALUES (24, 'B+', '2024-01-15', 100000002, 3001);
+INSERT INTO enrolls VALUES (25, 'B',  '2024-01-15', 100000007, 3001);
+INSERT INTO enrolls VALUES (26, 'A-', '2024-01-16', 100000001, 3002);
+INSERT INTO enrolls VALUES (27, 'A',  '2024-01-16', 100000003, 3003);
+INSERT INTO enrolls VALUES (28, 'B+', '2024-01-16', 100000004, 3003);
+INSERT INTO enrolls VALUES (29, 'C+', '2024-01-17', 100000010, 3002);
+INSERT INTO enrolls VALUES (30, 'A', '2024-01-17', 100000005, 3003);
+
+-- Enrollments (Fall 2023 - with grades)
+INSERT INTO enrolls VALUES (31, 'A',  '2023-09-01', 100000001, 4001);
+INSERT INTO enrolls VALUES (32, 'B+', '2023-09-01', 100000002, 4001);
+INSERT INTO enrolls VALUES (33, 'A-', '2023-09-01', 100000007, 4001);
+INSERT INTO enrolls VALUES (34, 'A',  '2023-09-02', 100000003, 4002);
+INSERT INTO enrolls VALUES (35, 'B',  '2023-09-02', 100000004, 4002);
+INSERT INTO enrolls VALUES (36, 'A-', '2023-09-02', 100000010, 4002);
+INSERT INTO enrolls VALUES (37, 'B+', '2023-09-03', 100000005, 4001);
+INSERT INTO enrolls VALUES (38, 'A',  '2023-09-03', 100000006, 4001);
  
 -- Advisors
 INSERT INTO advisor VALUES (1, '2022-08-25', 100000001, 1001);
